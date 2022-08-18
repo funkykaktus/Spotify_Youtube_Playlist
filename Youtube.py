@@ -44,18 +44,18 @@ def credentialsYoutube():
     return build('youtube','v3', credentials = credentials)
 
 
-def initialize():
-    addToYoutubePlaylist()
+def initialize(textFilename):
+    getYoutubeVideoID(textFilename)
 
-def addToYoutubePlaylist():
+def getYoutubeVideoID(textFilename):
     
     youtube = credentialsYoutube()
     resultsSpotify= Spotify.getSpotifyPlaylist()
 
     #Checks if there is a text file. If you want to export a new spotify playlist remove or rename the YoutubeVideoID text file.
-    if(not os.path.exists("YoutubeVideoID.txt")):
+    if(not os.path.exists(textFilename)):
         print("Creating a new text file")
-        videoIDTextFile = open("YoutubeVideoID.txt", "w")
+        videoIDTextFile = open(textFilename, "w")
 
         #Loops through spotify playlist
         for item in resultsSpotify['tracks']['items']:
@@ -65,18 +65,23 @@ def addToYoutubePlaylist():
             request= youtube.search().list(q=item['track']['name'] + " "+ item['track']['artists'][0]['name'],part='snippet',type='video', maxResults=1)
             res = request.execute()
             
-            #Adds the videoID to a text file since quota cost for a search is 100 points. You need to wait one day to reset the quoata. 
+            #Adds the videoID to a text file since quota cost for a search is 100 points per request. You need to wait one day to reset the quoata. 
+            print("Adding songs to text file")
             for item in res['items']:
-                print("Adding songs to text file")
                 videoIDTextFile.write(item['id']['videoId']+"\n")
 
         videoIDTextFile.close()
+    addSongsToYoutubePlaylist(youtube,textFilename)
 
-    #Adds song to youtube playlist. Quota for inserting to playlist is 50 points 
+def addSongsToYoutubePlaylist(youtube,textFilename): 
+    
+    #Adds song to youtube playlist. Quota for inserting to playlist is 50 points per request
     print("Adding songs to youtube playlist")
-    with open("YoutubeVideoID.txt") as videoIDTextFile:
+    
+    with open(textFilename) as videoIDTextFile:
         for line in videoIDTextFile:
             print(line.strip())
+            
             add_video_request=youtube.playlistItems().insert(
             part="snippet",
                 body={
